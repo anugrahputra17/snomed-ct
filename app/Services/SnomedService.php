@@ -27,6 +27,7 @@ class SnomedService
                 [
                     'term'  => $term,
                     'limit' => 10,
+                    'activeFilter' => 'true',
                 ]
             );
 
@@ -42,7 +43,7 @@ class SnomedService
 
             return collect($items)
                 ->mapWithKeys(fn (array $item) => [
-                    $item['conceptId'] => $item['pt']['term'],
+                    $item['conceptId'] => $item['fsn']['term'],
                 ])
                 ->toArray();
         });
@@ -66,7 +67,7 @@ class SnomedService
                 return null;
             }
 
-            return $response->json('pt.term');
+            return $response->json('fsn.term');
         });
     }
 

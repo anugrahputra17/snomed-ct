@@ -19,6 +19,15 @@ class PatientForm
                     ->required()
                     ->unique(ignoreRecord: true),
 
+                                
+                TextInput::make('no_ktp')
+                    ->label('No KTP')
+                    ->required(),
+
+                TextInput::make('no_bpjs')
+                    ->label('No BPJS')
+                    ->required(),
+
                 TextInput::make('name')
                     ->label('Nama Pasien')
                     ->required(),

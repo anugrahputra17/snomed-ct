@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Patients\RelationManagers;
 
 use App\Services\SnomedService;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\Concerns\HasDropdown;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -23,27 +24,36 @@ class DiagnosesRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
+
+
+            TextInput::make('Items')
+                ->label('Keluhan Utama')
+                ->required(),
+
             Select::make('snomed_code')
-    ->label('Cari Diagnosa (SNOMED CT)')
-    ->searchable()
-    ->getSearchResultsUsing(
-        fn (string $search): array =>
+            ->label('Cari Diagnosa (SNOMED CT)')
+            ->searchable()
+            ->getSearchResultsUsing(
+            fn (string $search): array =>
             app(\App\Services\SnomedService::class)->searchByTerm($search)
     )
-    ->getOptionLabelUsing(fn ($value) =>
-        $value
-            ? app(\App\Services\SnomedService::class)->formatLabel($value)
-            : null
+            ->getOptionLabelUsing(fn ($value) =>
+            $value
+                ? app(\App\Services\SnomedService::class)->formatLabel($value)
+                : null
     )
-    ->required(),
+            ->required(),
 
             TextInput::make('snomed_term')
                 ->label('SNOMED Term')
-                ->disabled(),
+                ->disabled()
+                ->dehydrated(),
+                
 
             Textarea::make('diagnosis_text')
                 ->label('Diagnosa Dokter')
                 ->required(),
+
         ]);
     }
 
