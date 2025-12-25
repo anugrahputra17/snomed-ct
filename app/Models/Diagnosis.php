@@ -9,13 +9,15 @@ class Diagnosis extends Model
     protected $fillable = [
         'patient_id',
         'diagnosis_text',
-        'snomed_code',
-        'snomed_term',
     ];
 
     public function patient()
     {
         return $this->belongsTo(Patient::class);
     }
-}
 
+    public function components()
+    {
+        return $this->hasMany(DiagnosisComponent::class);
+    }
+}

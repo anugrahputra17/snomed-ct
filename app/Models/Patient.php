@@ -8,8 +8,8 @@ class Patient extends Model
 {
     protected $fillable = [
         'medical_record_number',
-        'no_ktp',
         'no_bpjs',
+        'no_ktp',
         'name',
         'birth_date',
         'gender',

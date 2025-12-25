@@ -17,16 +17,26 @@ class PatientForm
                 TextInput::make('medical_record_number')
                     ->label('No Rekam Medis')
                     ->required()
-                    ->unique(ignoreRecord: true),
-
-                                
-                TextInput::make('no_ktp')
-                    ->label('No KTP')
-                    ->required(),
+                    ->unique(ignoreRecord: true)
+                    ->disabledOn('edit'),
 
                 TextInput::make('no_bpjs')
                     ->label('No BPJS')
-                    ->required(),
+                    ->maxLength(13)
+                    ->rule('digits:13')
+                    ->inputMode('numeric')
+                    ->disabledOn('edit')
+                    ->required()
+                    ->nullable(),
+
+                TextInput::make('no_ktp')
+                    ->label('No KTP')
+                    ->maxLength(16)
+                    ->rule('digits:16')
+                    ->inputMode('numeric')
+                    ->disabledOn('edit')
+                    ->required()
+                    ->nullable(),
 
                 TextInput::make('name')
                     ->label('Nama Pasien')
