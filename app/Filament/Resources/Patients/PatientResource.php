@@ -21,6 +21,9 @@ class PatientResource extends Resource
      * Model yang digunakan resource ini
      */
     protected static ?string $model = Patient::class;
+    
+    protected static ?string $modelLabel = 'Pasien';
+    protected static ?string $pluralModelLabel = 'Pasien';
 
     /**
      * Icon navigasi sidebar

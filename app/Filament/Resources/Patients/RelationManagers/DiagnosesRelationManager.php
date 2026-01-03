@@ -118,33 +118,35 @@ class DiagnosesRelationManager extends RelationManager
                 ->limit(40)
                 ->wrap(),
 
-            TextColumn::make('components')
+            TextColumn::make('detail_problem')
                 ->label('Detail Problem')
-                ->formatStateUsing(function ($record) {
-
-                    $html = '';
-
-                    $grouped = $record->components
-                        ->groupBy('variable');
-
-                    foreach ($grouped as $variable => $components) {
-
-                        $html .= "<strong>{$variable}</strong><br>";
-
-                        $values = $components
-                            ->flatMap(fn ($c) => $c->values)
-                            ->unique('snomed_concept_id');
-
-                        foreach ($values as $value) {
-                            $html .= "• {$value->snomed_fsn}<br>";
-                        }
-
-                        $html .= "<br>";
+                ->state(function ($record) {
+                 $output = [];
+        
+                foreach ($record->components->groupBy('variable') as $variable => $components) {
+                 $values = [];
+                 $seenIds = [];
+            
+                foreach ($components as $component) {
+                foreach ($component->values as $value) {
+                    if (!in_array($value->snomed_concept_id, $seenIds)) {
+                        $values[] = "• {$value->snomed_fsn}";
+                        $seenIds[] = $value->snomed_concept_id;
                     }
-
-                    return new \Illuminate\Support\HtmlString($html);
-                })
-                ->wrap(),
+                }
+            }
+            
+            if (!empty($values)) {
+                $output[] = "<strong>{$variable}</strong>";
+                $output = array_merge($output, $values);
+                $output[] = ""; // spacing
+            }
+        }
+        
+        return new \Illuminate\Support\HtmlString(implode("<br>", $output));
+    })
+    ->wrap()
+    ->html(),
 
             TextColumn::make('created_at')
                 ->label('Tanggal')
