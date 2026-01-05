@@ -62,7 +62,7 @@ class PatientsTable
                 Action::make('resume')
                     ->label('Resume Medis PDF')
                     ->icon('heroicon-o-document-arrow-down')
-                    ->url(fn ($record) => route('patient.resume.pdf', $record))
+                    ->url(fn ($record) => route('diagnosis.resume.pdf', $record))
                     ->openUrlInNewTab(),
             ])
 
