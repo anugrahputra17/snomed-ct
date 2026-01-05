@@ -153,13 +153,6 @@ class DiagnosesRelationManager extends RelationManager
                 ->dateTime('d M Y H:i'),
         ])
         ->recordActions([
-
-            \Filament\Actions\Action::make('pdf')
-                ->label('PDF')
-                ->icon('heroicon-o-document-arrow-down')
-                ->url(fn ($record) => route('diagnosis.resume.pdf', $record))
-                ->openUrlInNewTab(),
-
             EditAction::make(),
             DeleteAction::make(),
         ])
