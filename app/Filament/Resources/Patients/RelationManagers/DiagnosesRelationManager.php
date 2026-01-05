@@ -59,28 +59,31 @@ class DiagnosesRelationManager extends RelationManager
                             Select::make('snomed_concept_id')
                                 ->label('Cari SNOMED CT')
                                 ->searchable()
+                                ->reactive() // WAJIB agar afterStateUpdated jalan realtime
                                 ->getSearchResultsUsing(
-                                    fn (string $search): array =>
-                                        app(SnomedService::class)->searchByTerm($search)
+                                    fn(string $search): array =>
+                                    app(SnomedService::class)->searchByTerm($search)
                                 )
                                 ->getOptionLabelUsing(
-                                    fn ($value) =>
-                                        $value
-                                            ? app(SnomedService::class)->formatLabel($value)
-                                            : null
+                                    fn($value) =>
+                                    $value
+                                        ? app(SnomedService::class)->formatLabel($value)
+                                        : null
                                 )
                                 ->afterStateUpdated(function ($state, callable $set) {
                                     if (! $state) {
+                                        $set('snomed_fsn', null);
                                         return;
                                     }
 
+                                    // Ambil FSN dari API
                                     $label = app(SnomedService::class)->formatLabel($state);
 
-                                    if (preg_match('/^(.*) \(/', $label, $m)) {
-                                        $set('snomed_fsn', $m[1]);
-                                    }
+                                    // Simpan FSN lengkap (termasuk disorder, finding, dll)
+                                    $set('snomed_fsn', $label);
                                 })
                                 ->required(),
+
 
                             TextInput::make('snomed_fsn')
                                 ->label('SNOMED Term')
@@ -109,69 +112,61 @@ class DiagnosesRelationManager extends RelationManager
      * TABLE
      * ========================= */
     public function table(Table $table): Table
-{
-    return $table
-        ->columns([
+    {
+        return $table
+            ->columns([
 
-            TextColumn::make('diagnosis_text')
-                ->label('Ringkasan Diagnosis')
-                ->limit(40)
-                ->wrap(),
+                TextColumn::make('diagnosis_text')
+                    ->label('Ringkasan Diagnosis')
+                    ->limit(40)
+                    ->wrap(),
 
-            TextColumn::make('detail_problem')
-                ->label('Detail Problem')
-                ->state(function ($record) {
-                 $output = [];
-        
-                foreach ($record->components->groupBy('variable') as $variable => $components) {
-                 $values = [];
-                 $seenIds = [];
-            
-                foreach ($components as $component) {
-                foreach ($component->values as $value) {
-                    if (!in_array($value->snomed_concept_id, $seenIds)) {
-                        $values[] = "• {$value->snomed_fsn}";
-                        $seenIds[] = $value->snomed_concept_id;
-                    }
-                }
-            }
-            
-            if (!empty($values)) {
-                $output[] = "<strong>{$variable}</strong>";
-                $output = array_merge($output, $values);
-                $output[] = ""; // spacing
-            }
-        }
-        
-        return new \Illuminate\Support\HtmlString(implode("<br>", $output));
-    })
-    ->wrap()
-    ->html(),
+                TextColumn::make('detail_problem')
+                    ->label('Detail Problem')
+                    ->state(function ($record) {
+                        $output = [];
 
-            TextColumn::make('created_at')
-                ->label('Tanggal')
-                ->dateTime('d M Y H:i'),
-        ])
-        ->recordActions([
+                        foreach ($record->components->groupBy('variable') as $variable => $components) {
+                            $values = [];
+                            $seenIds = [];
 
-            \Filament\Actions\Action::make('pdf')
-                ->label('PDF')
-                ->icon('heroicon-o-document-arrow-down')
-                ->url(fn ($record) => route('diagnosis.resume.pdf', $record))
-                ->openUrlInNewTab(),
+                            foreach ($components as $component) {
+                                foreach ($component->values as $value) {
+                                    if (!in_array($value->snomed_concept_id, $seenIds)) {
+                                        $values[] = "• {$value->snomed_fsn}";
+                                        $seenIds[] = $value->snomed_concept_id;
+                                    }
+                                }
+                            }
 
-            EditAction::make(),
-            DeleteAction::make(),
-        ])
-        ->headerActions([
-            CreateAction::make(),
-        ])
-        ->toolbarActions([
-            BulkActionGroup::make([
-                DeleteBulkAction::make(),
-            ]),
-        ])
-        ->defaultSort('created_at', 'desc');
-}
+                            if (!empty($values)) {
+                                $output[] = "<strong>{$variable}</strong>";
+                                $output = array_merge($output, $values);
+                                $output[] = ""; // spacing
+                            }
+                        }
 
+                        return new \Illuminate\Support\HtmlString(implode("<br>", $output));
+                    })
+                    ->wrap()
+                    ->html(),
+
+                TextColumn::make('created_at')
+                    ->label('Tanggal')
+                    ->dateTime('d M Y H:i'),
+            ])
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
+            ])
+            ->headerActions([
+                CreateAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('created_at', 'desc');
+    }
 }
