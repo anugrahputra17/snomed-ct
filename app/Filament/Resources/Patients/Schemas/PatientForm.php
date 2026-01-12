@@ -29,7 +29,8 @@ class PatientForm
                     ->rule('digits:13')
                     ->inputMode('numeric')
                     ->disabledOn('edit')
-                    ->nullable(),
+                    ->nullable()
+                    ->required(),
 
                 TextInput::make('no_ktp')
                     ->label('No KTP')
@@ -100,7 +101,7 @@ class PatientForm
                     ->maxLength(100)
                     ->placeholder('Contoh: Jawa, Sunda, Batak, dll'),
 
-                Select::make('nationality')
+                Select::make('citizenship')
                     ->label('Kewarganegaraan')
                     ->options([
                         'wni' => 'WNI (Warga Negara Indonesia)',
@@ -114,12 +115,14 @@ class PatientForm
                     ->label('No HP')
                     ->tel()
                     ->maxLength(15)
-                    ->placeholder('08xxxxxxxxxx'),
+                    ->placeholder('08xxxxxxxxxx')
+                    ->required(),
 
                 Textarea::make('address')
                     ->label('Alamat')
                     ->rows(3)
-                    ->maxLength(500),
+                    ->maxLength(500)
+                    ->required(),
             ]);
     }
 }

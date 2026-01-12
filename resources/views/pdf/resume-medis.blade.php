@@ -51,8 +51,8 @@
 
 {{-- ================= HEADER ================= --}}
 <div class="header">
-    <h2>RUMAH SAKIT CONTOH</h2>
-    <small>Jl. Contoh No. 123 — Telp. (021) 123456</small>
+    <h2>RUMAH SAKIT SIGMA</h2>
+    <small>Jl. Rawa Bebek No. 123 — Telp. (021) 123456</small>
 </div>
 
 {{-- ================= DATA PASIEN ================= --}}
@@ -80,12 +80,6 @@
             <td>: {{ $diagnosis->created_at->format('d M Y') }}</td>
         </tr>
     </table>
-</div>
-
-{{-- ================= RINGKASAN ================= --}}
-<div class="section">
-    <div class="section-title">RINGKASAN DIAGNOSIS</div>
-    <p>{{ $diagnosis->diagnosis_text }}</p>
 </div>
 
 {{-- ================= DETAIL DIAGNOSIS ================= --}}

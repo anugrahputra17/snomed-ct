@@ -21,6 +21,11 @@ class PatientsTable
                     ->searchable()
                     ->sortable(),
 
+                TextColumn::make('no_bpjs')
+                    ->label('No BPJS')
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('name')
                     ->label('Nama Pasien')
                     ->searchable()
@@ -42,10 +47,10 @@ class PatientsTable
                     ->label('No HP')
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                TextColumn::make('created_at')
-                    ->label('Tanggal Input')
-                    ->dateTime('d M Y H:i')
-                    ->sortable(),
+                // TextColumn::make('created_at')
+                //     ->label('Tanggal Input')
+                //     ->dateTime('d M Y H:i')
+                //     ->sortable(),
             ])
 
             ->filters([
@@ -62,8 +67,20 @@ class PatientsTable
                 Action::make('resume')
                     ->label('Resume Medis PDF')
                     ->icon('heroicon-o-document-arrow-down')
-                    ->url(fn ($record) => route('patient.resume.pdf', $record))
-                    ->openUrlInNewTab(),
+                    ->url(function ($record) {
+                        $diagnosis = $record->diagnoses()
+                            ->latest()
+                            ->first();
+
+                        if (! $diagnosis) {
+                            return null;
+                        }
+
+                        return route('diagnosis.resume.pdf', $diagnosis);
+                    })
+                    ->openUrlInNewTab()
+                    ->visible(fn ($record) => $record->diagnoses()->exists()),
+
             ])
 
             ->toolbarActions([

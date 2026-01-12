@@ -27,7 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->brandName('Snomed CT Integrator')
+            ->brandName('Sigma-CT Integrator')
             ->favicon(asset('/snomed-ct.jpg'))
             ->login()
             ->colors([

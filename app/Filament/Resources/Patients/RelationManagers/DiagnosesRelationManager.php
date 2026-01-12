@@ -8,16 +8,15 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
-use Filament\Tables\Actions\Action;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\HtmlString;
 
 class DiagnosesRelationManager extends RelationManager
@@ -30,83 +29,96 @@ class DiagnosesRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-
-            Repeater::make('components')
-                ->label('Komponen Diagnosis (Problem)')
-                ->relationship()
-                ->schema([
-
-                    Hidden::make('component')
-                        ->default('Problem')
-                        ->dehydrated(),
-
-                    Select::make('variable')
-                        ->label('Variable')
-                        ->options([
-                            'Keluhan Utama'      => 'Keluhan Utama',
-                            'Riwayat Penyakit'   => 'Riwayat Penyakit',
-                            'Tindakan dan Hasil' => 'Tindakan dan Hasil',
-                            'Diagnosa'           => 'Diagnosa',
-                            'Obat'               => 'Obat',
-                        ])
-                        ->required(),
-
-                    Repeater::make('values')
-                        ->label('Daftar SNOMED / Nilai')
-                        ->relationship()
-                        ->schema([
-
-                            Select::make('snomed_concept_id')
-                                ->label('Cari SNOMED CT')
-                                ->searchable()
-                                ->reactive() // WAJIB agar afterStateUpdated jalan realtime
-                                ->getSearchResultsUsing(
-                                    fn(string $search): array =>
-                                    app(SnomedService::class)->searchByTerm($search)
-                                )
-                                ->getOptionLabelUsing(
-                                    fn($value) =>
-                                    $value
-                                        ? app(SnomedService::class)->formatLabel($value)
-                                        : null
-                                )
-                                ->afterStateUpdated(function ($state, callable $set) {
-                                    if (! $state) {
-                                        $set('snomed_fsn', null);
-                                        return;
-                                    }
-
-                                    // Ambil FSN dari API
-                                    $label = app(SnomedService::class)->formatLabel($state);
-
-                                    // Simpan FSN lengkap (termasuk disorder, finding, dll)
-                                    $set('snomed_fsn', $label);
-                                })
-                                ->required(),
-
-
-                            TextInput::make('snomed_fsn')
-                                ->label('SNOMED Term')
-                                ->disabled()
-                                ->dehydrated(),
-
-                            TextInput::make('value_text')
-                                ->label('Keterangan Tambahan')
-                                ->placeholder('Opsional'),
-                        ])
-                        ->columns(2)
-                        ->collapsible()
-                        ->addActionLabel('Tambah Keluhan / Diagnosis'),
-                ])
-                ->collapsible()
-                ->addActionLabel('Tambah Variable Problem'),
-
-            Textarea::make('diagnosis_text')
-                ->label('Ringkasan Diagnosis Dokter')
-                ->rows(2)
-                ->required(),
-        ]);
+        $this->problemRepeater()
+            ->columnSpanFull(),
+    ]);
     }
+
+    protected function problemRepeater(): Repeater
+{
+    return Repeater::make('components')
+        ->relationship()
+        ->label('Komponen Diagnosis')
+        ->columnSpanFull()
+        ->defaultItems(1)
+        ->collapsible()
+        ->cloneable()
+        ->itemLabel(fn ($state) => $state['variable'] ?? 'Variable Problem')
+        ->addActionLabel('➕ Tambah Variable Problem')
+        ->extraAttributes([
+            'class' => 'bg-gray-50 dark:bg-gray-900 rounded-xl p-4 border border-gray-300 dark:border-gray-700',
+        ])
+        ->schema([
+            Hidden::make('component')->default('Problem')->dehydrated(),
+
+            Select::make('variable')
+                ->label('Kategori Problem')
+                ->required()
+                ->options([
+                    'Keluhan Utama'       => 'Keluhan Utama',
+                    'Riwayat Penyakit'    => 'Riwayat Penyakit',
+                    'Tindakan dan Hasil'  => 'Tindakan dan Hasil',
+                    'Diagnosa'           => 'Diagnosa',
+                    'Obat'               => 'Obat',
+                ])
+                ->searchable()
+                ->columnSpanFull(),
+
+            $this->snomedRepeater(),
+        ]);
+}
+
+
+    protected function snomedRepeater(): Repeater
+{
+    return Repeater::make('values')
+        ->relationship()
+        ->label('Daftar Diagnosis (SNOMED CT)')
+        ->defaultItems(1)
+        ->columns(3)
+        ->addActionLabel('➕ Tambah Diagnosis')
+        ->collapsible()
+        ->extraAttributes([
+            'class' => 'bg-white dark:bg-gray-800 rounded-lg p-4 border border-primary-300 dark:border-primary-700',
+        ])
+        ->schema([
+            Select::make('snomed_concept_id')
+                ->label('Cari SNOMED CT')
+                ->required()
+                ->searchable()
+                ->reactive()
+                ->getSearchResultsUsing(
+                    fn (string $search): array =>
+                        app(SnomedService::class)->searchByTerm($search)
+                )
+                ->getOptionLabelUsing(
+                    fn ($value) =>
+                        $value ? app(SnomedService::class)->formatLabel($value) : null
+                )
+                ->afterStateUpdated(function ($state, callable $set) {
+                    $set('snomed_fsn', $state
+                        ? app(SnomedService::class)->formatLabel($state)
+                        : null
+                    );
+                })
+                ->columnSpan(1),
+
+            TextInput::make('snomed_fsn')
+                ->label('Snomed Term')
+                ->disabled()
+                ->dehydrated()
+                ->extraAttributes([
+                    'class' => 'bg-primary-50 dark:bg-primary-900 font-semibold',
+                ])
+                ->columnSpan(2),
+
+            TextInput::make('value_text')
+                ->label('Keterangan Tambahan')
+                ->placeholder('Contoh: kronis, sejak 2020, ringan, dsb')
+                ->columnSpan(3),
+        ]);
+}
+
 
     /* =========================
      * TABLE
@@ -115,58 +127,34 @@ class DiagnosesRelationManager extends RelationManager
     {
         return $table
             ->columns([
-
-                TextColumn::make('diagnosis_text')
-                    ->label('Ringkasan Diagnosis')
-                    ->limit(40)
-                    ->wrap(),
-
                 TextColumn::make('detail_problem')
-                    ->label('Detail Problem')
-                    ->state(function ($record) {
-                        $output = [];
-
-                        foreach ($record->components->groupBy('variable') as $variable => $components) {
-                            $values = [];
-                            $seenIds = [];
-
-                            foreach ($components as $component) {
-                                foreach ($component->values as $value) {
-                                    if (!in_array($value->snomed_concept_id, $seenIds)) {
-                                        $values[] = "• {$value->snomed_fsn}";
-                                        $seenIds[] = $value->snomed_concept_id;
-                                    }
-                                }
-                            }
-
-                            if (!empty($values)) {
-                                $output[] = "<strong>{$variable}</strong>";
-                                $output = array_merge($output, $values);
-                                $output[] = ""; // spacing
-                            }
-                        }
-
-                        return new \Illuminate\Support\HtmlString(implode("<br>", $output));
-                    })
+                    ->label('Detail Diagnosis')
+                    ->html()
                     ->wrap()
-                    ->html(),
+                    ->state(fn ($record) => $this->renderDiagnosis($record)),
 
                 TextColumn::make('created_at')
-                    ->label('Tanggal')
+                    ->label('Tanggal Input')
                     ->dateTime('d M Y H:i'),
             ])
-            ->recordActions([
-                \Filament\Actions\Action::make('pdf')
-                ->label('PDF')
-                ->icon('heroicon-o-document-arrow-down')
-                ->url(fn ($record) => route('diagnosis.resume.pdf', $record))
-                ->openUrlInNewTab(),
-                
-                EditAction::make(),
-                DeleteAction::make(),
-            ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->label('Tambah Diagnosis')
+                    ->modalWidth('7xl')
+                    ->createAnother(false)
+                    ->visible(fn ($livewire) =>
+                        $livewire->ownerRecord->diagnoses()->count() === 0
+                    ),
+            ])
+            ->recordActions([
+                // \Filament\Actions\Action::make('pdf')
+                //     ->label('PDF')
+                //     ->icon('heroicon-o-document-arrow-down')
+                //     ->url(fn ($record) => route('diagnosis.resume.pdf', $record))
+                //     ->openUrlInNewTab(),
+
+                EditAction::make()->modalWidth('7xl'),
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -174,5 +162,35 @@ class DiagnosesRelationManager extends RelationManager
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    /* =========================
+     * RENDERER
+     * ========================= */
+    protected function renderDiagnosis($record): HtmlString
+    {
+        $output = [];
+
+        foreach ($record->components->groupBy('variable') as $variable => $components) {
+            $seen = [];
+            $items = [];
+
+            foreach ($components as $component) {
+                foreach ($component->values as $value) {
+                    if (! in_array($value->snomed_concept_id, $seen)) {
+                        $items[] = "• {$value->snomed_fsn}";
+                        $seen[] = $value->snomed_concept_id;
+                    }
+                }
+            }
+
+            if ($items) {
+                $output[] = "<strong>{$variable}</strong>";
+                $output = array_merge($output, $items);
+                $output[] = '';
+            }
+        }
+
+        return new HtmlString(implode('<br>', $output));
     }
 }

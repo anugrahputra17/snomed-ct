@@ -8,7 +8,7 @@ class Diagnosis extends Model
 {
     protected $fillable = [
         'patient_id',
-        'diagnosis_text',
+        // 'diagnosis_text',
     ];
 
     public function patient()
